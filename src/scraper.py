@@ -48,22 +48,20 @@ class TelegramScraper:
         logging.info(f"--- Starting scrape: {channel_username} ---")
         try:
             channel_data = []
-            # Increase limit if you want more history (e.g., limit=500)
             async for message in self.client.iter_messages(channel_username, limit=100):
-                # Use date to organize data
                 date_str = message.date.strftime('%Y-%m-%d')
                 image_dir, json_dir = await self.setup_folders(channel_username, date_str)
 
-                # Download Image if it exists
                 image_path = None
                 if message.photo:
-                    image_filename = f"{message.id}.jpg"
-                    image_path = os.path.join(image_dir, image_filename)
-                    # Only download if it doesn't already exist
-                    if not os.path.exists(image_path):
-                        await self.client.download_media(message.photo, file=image_path)
+                    try:
+                        image_filename = f"{message.id}.jpg"
+                        image_path = os.path.join(image_dir, image_filename)
+                        if not os.path.exists(image_path):
+                            await self.client.download_media(message.photo, file=image_path)
+                    except Exception as media_err:
+                        logging.warning(f"Failed to download media for msg {message.id}: {media_err}")
 
-                # Build the record
                 msg_data = {
                     "message_id": message.id,
                     "channel_name": channel_username,
@@ -75,6 +73,20 @@ class TelegramScraper:
                     "forwards": message.forwards or 0
                 }
                 channel_data.append(msg_data)
+
+            # SAVE JSON
+            json_file_path = os.path.join(json_dir, f"{channel_username}.json")
+            with open(json_file_path, 'w', encoding='utf-8') as f:
+                json.dump(channel_data, f, indent=4, ensure_ascii=False)
+            
+            logging.info(f"Done! Saved {len(channel_data)} messages for {channel_username}")
+
+        except errors.FloodWaitError as e:
+            logging.error(f"Telegram Rate Limit hit! Must wait {e.seconds} seconds.")
+        except errors.UsernameInvalidError:
+            logging.error(f"Channel username {channel_username} does not exist.")
+        except Exception as e:
+            logging.error(f"Unexpected error in {channel_username}: {str(e)}")
 
             # Save the JSON file for this channel
             json_file_path = os.path.join(json_dir, f"{channel_username}.json")
