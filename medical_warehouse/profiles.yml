@@ -1,0 +1,12 @@
+medical_warehouse:
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: postgres
+      password: postgres  # Try 'postgres' first, then try 'password'
+      port: 5432
+      dbname: postgres
+      schema: staging
+      threads: 1
+  target: dev

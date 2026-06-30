@@ -1,0 +1,22 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+build/
+dist/
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Data & OS
+data/
+.DS_Store
+.env
+*.session
+kara_session.session
